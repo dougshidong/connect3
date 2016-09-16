@@ -8,17 +8,16 @@ module ai
     contains
 
     recursive subroutine alphabeta( &
-        v, node, ialpha, ibeta, iplayer, depth, maxdepth, bestmove)
+        v, node, ialpha, ibeta, iplayer, depth, maxdepth, bestmove, htype)
 
         implicit none
 
         type(board)  :: node
-        integer(pi)  :: iplayer
+        integer(pi)  :: iplayer, htype
         integer(pi4) :: ialpha, ibeta 
         integer(pi4) :: v, vab, depth, alpha, beta, maxdepth
         integer(pi)  :: player, ichild, nchildren
         type(act)    :: acts(16), bestmove
-        integer(pi)  :: ipiece
 
         alpha = ialpha
         beta = ibeta
@@ -35,7 +34,7 @@ module ai
         end if
         
         if(depth.eq.maxdepth) then
-            v = evalHeuristic(node)
+            v = evalHeuristic(node, htype)
             return
         end if
 
@@ -46,17 +45,11 @@ module ai
             allocate(node%children(nchildren))
             do ichild = 1, nchildren
                 allocate(node%children(ichild)%squares(imax, jmax))
-!               node%children(ichild)%squares = node%squares
-!               node%children(ichild)%pieces  = node%pieces
-!               node%children(ichild)%winner  = node%winner
-!               node%children(ichild)%depth   = node%depth + 1
-!               node%children(ichild)%turn    = p2
-!               call movepiece(node%children(ichild), acts(ichild))
                 call makechild(node, node%children(ichild), acts(ichild))
 
                 vab = 0
                 call alphabeta(vab, node%children(ichild), &
-                        alpha, beta, p2, depth + 1, maxdepth, bestmove)
+                        alpha, beta, p2, depth + 1, maxdepth, bestmove, htype)
 
                 if(depth.eq.0) then
                     if(vab.gt.v) then 
@@ -91,17 +84,11 @@ module ai
             allocate(node%children(nchildren))
             do ichild = 1, nchildren
                 allocate(node%children(ichild)%squares(imax, jmax))
-!               node%children(ichild)%squares = node%squares
-!               node%children(ichild)%pieces  = node%pieces
-!               node%children(ichild)%winner  = node%winner
-!               node%children(ichild)%depth   = node%depth + 1
-!               node%children(ichild)%turn    = p1
-!               call movepiece(node%children(ichild), acts(ichild))
                 call makechild(node, node%children(ichild), acts(ichild))
 
                 vab = 0
                 call alphabeta(vab, node%children(ichild), &
-                        alpha, beta, p1, depth + 1, maxdepth, bestmove)
+                        alpha, beta, p1, depth + 1, maxdepth, bestmove, htype)
                 if(depth.eq.0) then
                     if(vab.lt.v) then 
                         bestmove = acts(ichild)
@@ -134,12 +121,18 @@ module ai
 
     end subroutine
 
-    function evalHeuristic(state) result(h)
+    function evalHeuristic(state, htype) result(h)
         implicit none
         type (board) :: state
         integer(pi4) :: h
+        integer(pi)  :: htype
 
-        h = h2run(state)
+        select case(htype)
+            case(0)
+                h = h2run(state)
+            case(1)
+                h = hdist(state)
+        end select
 
         return
 
@@ -163,7 +156,7 @@ module ai
             yj = state%pieces(2,j,1)
 
             if(abs(xi - xj).eq.1 .and. abs(yi - yj).eq.1) then
-                h = h + 7
+                h = h + 100
             end if
 
             xi = state%pieces(1,i,2)
@@ -173,8 +166,49 @@ module ai
             yj = state%pieces(2,j,2)
 
             if(abs(xi - xj).eq.1 .and. abs(yi - yj).eq.1) then
-                h = h - 7
+                h = h - 100
             end if
+        end do
+        end do
+
+        if(state%turn.eq.p1) h = h - state%depth
+        if(state%turn.eq.p2) h = h + state%depth
+
+        return
+
+    end function
+
+    function hdist(state) result(h)
+        implicit none
+        type (board) :: state
+        integer(pi4) :: h, d1, d2
+        integer(pi)  :: i, j
+        integer(pi)  :: xi, yi, xj, yj
+
+        h = 0
+
+        d1 = 0
+        d2 = 0
+        do i = 1, 3
+        do j = i+one, 4
+            xi = state%pieces(1,i,1)
+            yi = state%pieces(2,i,1)
+
+            xj = state%pieces(1,j,1)
+            yj = state%pieces(2,j,1)
+
+            d1 = (xi - xj)**2 + (yi - yj)**2
+            h = h - 20*d1
+
+            xi = state%pieces(1,i,2)
+            yi = state%pieces(2,i,2)
+
+            xj = state%pieces(1,j,2)
+            yj = state%pieces(2,j,2)
+
+            d2 = (xi - xj)**2 + (yi - yj)**2
+
+            h = h + 20*d2
         end do
         end do
 
