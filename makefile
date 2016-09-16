@@ -7,5 +7,7 @@ compile:
 	gfortran $(PRC) $(OBJ) -O3 -o $(OUT)
 dbg:
 	gfortran $(PRC) $(DBG) $(OBJ) -o $(OUT)
+pro:
+	gfortran $(PRC) -p -O1 $(OBJ) -o $(OUT)
 clean:
 	rm -fv *.out *.mod *.MOD $(OUT)
