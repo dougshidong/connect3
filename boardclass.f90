@@ -155,8 +155,7 @@ module boardclass
         CHARACTER(LEN=5) :: FMT
         CHARACTER(LEN=1) :: pb(imax, jmax)
 
-!       write(FMT,'( "(", I1, A2, ")" )') imax,'I2'
-        write(FMT,'( "(", I1, A2, ")" )') imax,'A2'
+        write(FMT,'( "(", I1, "A2)" )') imax
 
         pb = ','
         do i = 1, imax
@@ -165,10 +164,6 @@ module boardclass
             if(state%squares(i,j).eq.p2) pb(i,j) = '-'
         end do
         end do
-
-!       do j = 1, jmax
-!         write(*,FMT) state%squares(:,j)
-!       end do
         do j = 1, jmax
           write(*,*) pb(:,j)
         end do
