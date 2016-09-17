@@ -6,4 +6,5 @@ module globals
     integer(pi), parameter ::  one = 1, two = 2
     integer(pi)            ::  iam, heis
     integer(pi4)           ::  big
+    integer(pi), parameter ::  sortd = 2
 end module globals

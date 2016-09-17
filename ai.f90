@@ -8,20 +8,23 @@ module ai
     contains
 
     recursive subroutine alphabeta( &
-        v, node, ialpha, ibeta, iplayer, depth, maxdepth, bestmove, htype)
+        v, node, ialpha, ibeta, iplayer, depth, imaxdepth, bestmove, htype)
 
         implicit none
 
         type(board)  :: node
+        type(board), allocatable  :: rootchildren(:)
+        integer(pi4), allocatable :: values(:)
         integer(pi)  :: iplayer, htype
-        integer(pi4) :: ialpha, ibeta 
-        integer(pi4) :: v, vab, depth, alpha, beta, maxdepth
-        integer(pi)  :: player, ichild, nchildren
-        type(act)    :: acts(16), bestmove
+        integer(pi4) :: ialpha, ibeta, imaxdepth
+        integer(pi4) :: v, vab, depth, alpha, beta, maxdepth, vtemp
+        integer(pi)  :: player, ichild, jchild, nchildren
+        type(act)    :: acts(16), bestmove, tempmove
 
         alpha = ialpha
         beta = ibeta
         player = iplayer
+        maxdepth = imaxdepth
 
         v = 0
         vab = 0
@@ -42,6 +45,50 @@ module ai
         if(player.eq.p1) then
             v = -big
             call generateActions(node, p1, nchildren, acts)
+
+            ! Run alpha-beta on all children up to a depth of maxdepth - 1
+            if(depth.eq.0 .and. sortd.ne.0) then
+                allocate(rootchildren(nchildren))
+                allocate(values(nchildren))
+                do ichild = 1, nchildren
+                    allocate(rootchildren(ichild)%squares(imax, jmax))
+                    call makechild(node, rootchildren(ichild), acts(ichild))
+
+                    vab = 0
+                    call alphabeta(vab, rootchildren(ichild), &
+                            alpha, beta, p2, depth + 1, maxdepth - sortd, bestmove, htype)
+                    v = max(v, vab)
+                    alpha = max(alpha, v)
+                    values(ichild) = v
+                    if(beta.le.alpha) exit
+                end do
+                do ichild = 1, nchildren
+                    if(allocated(rootchildren(ichild)%squares)) then
+                        deallocate(rootchildren(ichild)%squares)
+                    end if
+                end do
+                deallocate(rootchildren)
+
+                ! Bubble Sort
+                do ichild = 1, nchildren
+                do jchild = nchildren, ichild + 1, -1
+                    if (values(jchild-1)<values(jchild)) then
+                        vtemp = values(jchild-1)
+                        values(jchild-1) = values(jchild)
+                        values(jchild) = vtemp
+                        tempmove = acts(jchild-1)
+                        acts(jchild-1) = acts(jchild)
+                        acts(jchild) = tempmove
+                    end if
+                end do
+                end do
+
+                deallocate(values)
+                v = -big
+                alpha = -big
+                beta = big
+            end if
+
             allocate(node%children(nchildren))
             do ichild = 1, nchildren
                 allocate(node%children(ichild)%squares(imax, jmax))
@@ -58,12 +105,14 @@ module ai
                 end if
 
                 v = max(v, vab)
-                if(depth.eq.0) then
-                    write(*,'(I2,"  ",2I1,A1," ",I0)') & 
-                    ichild, acts(ichild)%i, acts(ichild)%j, acts(ichild)%d, v
-                end if
+
                 alpha = max(alpha, v)
                 
+                if(depth.eq.0) then
+                    write(*,'(I2,"  ",2I1,A1," v:",I0 )') & 
+                    ichild, acts(ichild)%i, acts(ichild)%j, acts(ichild)%d, v
+                    write(*,*) 'ichild, alpha', ichild, alpha
+                end if
 
                 if(beta.le.alpha) exit
             end do
@@ -81,6 +130,49 @@ module ai
         else
             v = big
             call generateActions(node, p2, nchildren, acts)
+            ! Run alpha-beta on all children up to a depth of maxdepth - 1
+            if(depth.eq.0 .and. sortd.ne.0) then
+                allocate(rootchildren(nchildren))
+                allocate(values(nchildren))
+                do ichild = 1, nchildren
+                    allocate(rootchildren(ichild)%squares(imax, jmax))
+                    call makechild(node, rootchildren(ichild), acts(ichild))
+
+                    vab = 0
+                    call alphabeta(vab, rootchildren(ichild), &
+                            alpha, beta, p1, depth + 1, maxdepth - sortd, bestmove, htype)
+                    v = min(v, vab)
+                    beta = min(beta, v)
+                    values(ichild) = v
+                    if(beta.le.alpha) exit
+                end do
+                do ichild = 1, nchildren
+                    if(allocated(rootchildren(ichild)%squares)) then
+                        deallocate(rootchildren(ichild)%squares)
+                    end if
+                end do
+                deallocate(rootchildren)
+
+                ! Bubble Sort
+                do ichild = 1, nchildren
+                do jchild = nchildren, ichild + 1, -1
+                    if (values(jchild-1)>values(jchild)) then
+                        vtemp = values(jchild-1)
+                        values(jchild-1) = values(jchild)
+                        values(jchild) = vtemp
+                        tempmove = acts(jchild-1)
+                        acts(jchild-1) = acts(jchild)
+                        acts(jchild) = tempmove
+                    end if
+                end do
+                end do
+
+                deallocate(values)
+                v = big
+                alpha = -big
+                beta = big
+            end if
+
             allocate(node%children(nchildren))
             do ichild = 1, nchildren
                 allocate(node%children(ichild)%squares(imax, jmax))
@@ -96,12 +188,15 @@ module ai
                 end if
 
                 v = min(v, vab)
-                if(depth.eq.0) then
-                    write(*,'(I2,"  ",2I1,A1," ",I0)') & 
-                    ichild, acts(ichild)%i, acts(ichild)%j, acts(ichild)%d, v
-                end if
 
                 beta = min(beta, v)
+
+                if(depth.eq.0) then
+                    write(*,'(I2,"  ",2I1,A1," v:",I0)') & 
+                    ichild, acts(ichild)%i, acts(ichild)%j, acts(ichild)%d, v
+                    write(*,*) 'ichild, beta', ichild, beta
+                end if
+
                 if(beta.le.alpha) exit
             end do
 

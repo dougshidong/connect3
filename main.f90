@@ -13,7 +13,7 @@ program main
     CHARACTER(len=32) :: arg
     integer(pi) :: player, htype
     integer(pi4):: v, alpha, beta, rounds, mdepth
-    real        :: start, finish, starttot, finishtot
+    real        :: start, finish, starttot, finishtot, maxt
 
     big = huge(v)
     imax = 5
@@ -41,25 +41,27 @@ program main
     call initialize_board(game)
     call printboard(game)
 
+    rounds = 0
     player = heis
     if(iam.eq.p2) then
         read(*,'(2I1,A1)') move%i,move%j,move%d
         call movepiece(game, move)
         call printboard(game)
+        rounds = rounds + 1
     end if
 
-    rounds = 0
     call cpu_time(starttot)
+    maxt = 0
     do while(game%winner.eq.empty)
         rounds = rounds + 1
 !       read(*,'(2I1,A1)') move%i,move%j,move%d
         if(player.eq.iam) then
             player = heis
-            mdepth = 10
+            mdepth = 11
             htype  = 0
         else
             player = iam
-            mdepth = 10
+            mdepth = 11
             htype  = 0
         end if
         write(*,*) 'round:', rounds, 'player', player
@@ -69,13 +71,16 @@ program main
         print '("Time = ",f6.3," seconds.")',finish-start
         write(*,'(A,2I1,A1," Value:",I0," Time: ", f6.3, " seconds")') &
             'Best Move: ', move%i, move%j, move%d, v, finish - start
+        if(finish-start.ge.maxt) maxt = finish-start
         call movepiece(game, move)
         call printboard(game)
         call checkwinner(game)
-        if(rounds.eq.100) exit
+        if(rounds.eq.200) exit
     end do
     call cpu_time(finishtot)
-    print '("Total time = ",f6.3," seconds.")',finishtot-starttot
+    print '("Total time = ",f16.3," seconds.")',finishtot-starttot
+    print '("Average time / search = ",f6.3," seconds.")', (finishtot-starttot) / rounds
+    print '("Max search time = ",f6.3," seconds.")', maxt
 
     deallocate(game%squares)
 
