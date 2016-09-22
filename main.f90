@@ -31,6 +31,7 @@ program main
         if(arg == '-7x6') then
             imax = 7
             jmax = 6
+            mdepth = 10
         else if(arg == '-white') then
             iam = p1
             heis = p2
@@ -81,14 +82,13 @@ program main
         call printboard(game)
         call checkwinner(game)
     end if
-    player = iam
     do while(game%winner.eq.empty)
         rounds = rounds + 1
 
         write(*,*) 'ROUND:', rounds
         write(*,*) 'Player', iam
         call cpu_time(start)
-        call alphabeta(v, game, -huge(alpha), huge(beta), player, 0, mdepth, move, htype)
+        call alphabeta(v, game, -huge(alpha), huge(beta), iam, 0, mdepth, move, htype)
         call cpu_time(finish)
         print '("Time = ",f6.3," seconds.")',finish-start
         write(*,'(A,2I1,A1," Value:",I0," Time: ", f6.3, " seconds")') &
