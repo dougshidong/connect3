@@ -7,4 +7,5 @@ module globals
     integer(pi)            ::  iam, heis
     integer(pi4)           ::  big
     integer(pi), parameter ::  sortd = 2
+    integer(pi), parameter ::  printt = 1
 end module globals

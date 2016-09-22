@@ -155,6 +155,7 @@ module boardclass
         CHARACTER(LEN=5) :: FMT
         CHARACTER(LEN=1) :: pb(imax, jmax)
 
+        if(printt.eq.0) return
         write(FMT,'( "(", I1, "A2)" )') imax
 
         pb = ','
