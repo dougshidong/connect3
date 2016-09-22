@@ -78,7 +78,7 @@ module boardclass
             root%pieces(1,1,1) = 2
             root%pieces(2,1,1) = 2
             root%pieces(1,2,1) = 2
-            root%pieces(2,2,1) = 3
+            root%pieces(2,2,1) = 4
             root%pieces(1,3,1) = 6
             root%pieces(2,3,1) = 3
             root%pieces(1,4,1) = 6
