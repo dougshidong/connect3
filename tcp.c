@@ -100,7 +100,7 @@ void receive3(int s, int *pos, int *dir)
       exit (1);
     }
     fprintf(stderr, "Received move from server: %s\n", buf);
-    sscanf(buf, "%2d%c", pos, cdir);
+    sscanf(buf, "%d%c", pos, cdir);
     switch(*cdir)
     {
         case 'N': *dir = 1; break;
