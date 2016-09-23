@@ -25,6 +25,7 @@ program main
     heis = p2
     htype = 0
     mdepth = 10
+    gameid = 11
 
     do iarg = 1, iargc()
         call getarg(iarg, arg)
@@ -80,25 +81,15 @@ program main
         write(*,*) 'ROUND:', rounds
         write(*,*) 'Player', iam
         call cpu_time(start)
+        nnode = 0
         call alphabeta(v, game, -huge(alpha), huge(beta), iam, 0, mdepth, move, htype)
         call cpu_time(finish)
         print '("Time = ",f6.3," seconds.")',finish-start
-        write(*,'(A,2I1,A1," Value:",I0," Time: ", f6.3, " seconds")') &
-            'Best Move: ', move%i, move%j, move%d, v, finish - start
+        write(*,'(A,2I1,A1," Value: ",I0," Nodes evaluated: ", I0," Time: ", f6.3, " seconds")') &
+            'Best Move: ', move%i, move%j, move%d, v, nnode, finish - start
         if(finish-start.ge.maxt) maxt = finish-start
 
-        ipos = move%i*10 + move%j
-        select case(move%d)
-            case('N')
-                idir = 1
-            case('E')
-                idir = 2
-            case('S')
-                idir = 3
-            case('W')
-                idir = 4
-        end select
-        write(*,*) ipos, idir
+        call iposidirtomove(ipos, idir, move, .false.)
         call send3(socket, ipos, idir) 
         call movepiece(game, move)
         call printboard(game)
@@ -107,18 +98,7 @@ program main
 
         write(*,*) 'Player', heis
         call receive3(socket, ipos, idir)
-        move%i = ipos / 10 
-        move%j = mod(ipos,10)
-        select case(idir)
-            case(1)
-                move%d = 'N' 
-            case(2)
-                move%d = 'E' 
-            case(3)
-                move%d = 'S'
-            case(4)
-                move%d = 'W' 
-        end select
+        call iposidirtomove(ipos, idir, move, .true.)
         call movepiece(game, move)
         call printboard(game)
         call checkwinner(game)
@@ -135,15 +115,56 @@ program main
 
     write(*,*) game%winner
 
+    open(unit=40,file='winnings.dat',Access = 'append',Status='old')
     if(game%winner.eq.iam) then
+        write(40,'(A,I4,A)') 'I won in ', rounds,' moves. :)'
         write(*,'(A,I4,A)') 'I won in ', rounds,' moves. :)'
     endif
     if(game%winner.eq.heis) then
+        write(40,'(A,I4,A)') 'I lost in ', rounds,' moves. :('
         write(*,'(A,I4,A)') 'I lost in ', rounds,' moves. :('
     endif
     if(game%winner.eq.empty) then
+        write(40,'(A,I4,A)') 'It s a tie after ', rounds,' moves. :\'
         write(*,'(A,I4,A)') 'It s a tie after ', rounds,' moves. :\'
     endif
-
+    close(40)
 
 end program
+
+subroutine iposidirtomove(ipos, idir, move, rcv)
+    use boardclass
+    implicit none
+    integer :: ipos, idir
+    type(act) :: move
+    logical :: rcv
+
+    if(rcv) then
+        move%i = ipos / 10 
+        move%j = mod(ipos,10)
+        select case(idir)
+            case(1)
+                move%d = 'N' 
+            case(2)
+                move%d = 'E' 
+            case(3)
+                move%d = 'S'
+            case(4)
+                move%d = 'W' 
+        end select
+    else
+        ipos = move%i*10 + move%j
+        select case(move%d)
+            case('N')
+                idir = 1
+            case('E')
+                idir = 2
+            case('S')
+                idir = 3
+            case('W')
+                idir = 4
+        end select
+    end if
+
+    return
+end subroutine

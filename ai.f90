@@ -27,13 +27,16 @@ module ai
         player = iplayer
         maxdepth = imaxdepth
 
+        nnode = nnode + 1
+
         v = 0
         vab = 0
         call checkwinner(node)
         if(node%winner.ne.0) then
 !           Substracting node depth encourages the fewest winning moves
 !           Without depth, it may 'taunt' the enemy with an uppper hand forever
-            v = node%winner * ((big-1) - node%depth)
+            v = evalHeuristic(node, htype)
+            v = v + node%winner * ((big-10000) - node%depth)
             return
         end if
         
@@ -121,9 +124,9 @@ module ai
 
                 alpha = max(alpha, v)
                 
-                if(depth.eq.0) then
-                    write(*,'(I2,"  ",2I1,A1," v:",I0 )') & 
-                    ichild, acts(ichild)%i, acts(ichild)%j, acts(ichild)%d, v
+                if(depth.eq.0 .and. printt.eq.1) then
+                    write(*,'(I2," out of ", I2, ", Move: " 2I1,A1,", value:",I0)') & 
+                    ichild, nchildren, acts(ichild)%i, acts(ichild)%j, acts(ichild)%d, v
                 end if
 
                 if(beta.le.alpha) exit
@@ -152,7 +155,6 @@ module ai
                 do ichild = nchildren, 2, -1
                     call random_number(mixit)
                     jchild = 1 + floor(ichild*mixit) 
-                    write(*,*) 'ijchild',ichild, jchild
                     tempmove = acts(jchild)
                     acts(jchild) = acts(ichild)
                     acts(ichild) = tempmove
@@ -217,9 +219,9 @@ module ai
 
                 beta = min(beta, v)
 
-                if(depth.eq.0) then
-                    write(*,'(I2,"  ",2I1,A1," v:",I0)') & 
-                    ichild, acts(ichild)%i, acts(ichild)%j, acts(ichild)%d, v
+                if(depth.eq.0 .and. printt.eq.1) then
+                    write(*,'(I2," out of ", I2, ", Move: " 2I1,A1,", value:",I0)') & 
+                    ichild, nchildren, acts(ichild)%i, acts(ichild)%j, acts(ichild)%d, v
                 end if
 
                 if(beta.le.alpha) exit
@@ -268,38 +270,44 @@ module ai
         h = 0
 
         do i = 1, 3
-        do j = i+one, 4
+
             xi = state%pieces(1,i,1)
             yi = state%pieces(2,i,1)
+            do j = i+one, 4
 
-            xj = state%pieces(1,j,1)
-            yj = state%pieces(2,j,1)
+                xj = state%pieces(1,j,1)
+                yj = state%pieces(2,j,1)
 
-            dx = abs(xi - xj)
-            dy = abs(yi - yj)
+                dx = abs(xi - xj)
+                dy = abs(yi - yj)
 
-            if(dx.eq.1 .and. dy.eq.1) then
-                h = h + 100
-                if(xi.eq.xj .or. yi.eq.yj) h = h + 3 ! Prefer diagonals
-            end if
-            h = h - abs(xi-(imax+1)/2)
-            h = h - abs(yi-(jmax+1)/2)
+                if(dx.eq.1 .and. dy.eq.1) then
+                    h = h + 100
+    !                if(xi.eq.xj .or. yi.eq.yj) h = h + 3 ! Prefer diagonals
+                end if
+            end do
+
+            h = h - abs(xi-(imax+1)/2) ! Ideally, pieces go towards the center
+!            h = h - abs(yi-(jmax+1)/2) ! Ideally, pieces go towards the center
 
             xi = state%pieces(1,i,2)
             yi = state%pieces(2,i,2)
+            do j = i+one, 4
+                xj = state%pieces(1,j,2)
+                yj = state%pieces(2,j,2)
 
-            xj = state%pieces(1,j,2)
-            yj = state%pieces(2,j,2)
+                dx = abs(xi - xj)
+                dy = abs(yi - yj)
 
-            dx = abs(xi - xj)
-            dy = abs(yi - yj)
+                if(dx.eq.1 .and. dy.eq.1) then
+                    h = h - 100
+    !                if(xi.eq.xj .or. yi.eq.yj) h = h + 3 ! Prefer diagonals
+                end if
+            end do
 
-            if(dx.eq.1 .and. dy.eq.1) then
-                h = h - 100
-                if(xi.eq.xj .or. yi.eq.yj) h = h + 3 ! Prefer diagonals
-            end if
-            h = h + abs(xi-(imax+1)/2)
-        end do
+            h = h + abs(xi-(imax+1)/2) ! Ideally, pieces go towards the center
+!            h = h + abs(yi-(jmax+1)/2) ! Ideally, pieces go towards the center
+
         end do
 
         return
@@ -339,9 +347,6 @@ module ai
             h = h + 20*d2
         end do
         end do
-
-        if(state%turn.eq.p1) h = h - state%depth
-        if(state%turn.eq.p2) h = h + state%depth
 
         return
 
