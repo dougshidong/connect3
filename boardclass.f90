@@ -115,6 +115,7 @@ module boardclass
             ip = 2
         end if
         
+        state%turn = -state%turn
         state%squares(x,y) = empty
         select case(move%d)
             case('N')
@@ -175,14 +176,15 @@ module boardclass
     subroutine checkwinner(state)
         implicit none
         type(board) :: state
-        integer(pi) :: i, j, piece1, piece2, piece3
+        integer(pi) :: i, j, piece1, piece2, piece3, p
 
         state%winner = empty
+        p = -state%turn
 !       Check horizontal
         do i = one, imax - two
         do j = one, jmax
             piece1 = state%squares(i,j)
-            if(piece1.ne.empty) then
+            if(piece1.eq.p) then
                 piece2 = state%squares(i+1,j)
                 if(piece2.eq.piece1) then
                     piece3 = state%squares(i+2,j)
@@ -199,7 +201,7 @@ module boardclass
         do i = one, imax
         do j = one, jmax - two
             piece1 = state%squares(i,j)
-            if(piece1.ne.empty) then
+            if(piece1.eq.p) then
                 piece2 = state%squares(i,j+1)
                 if(piece2.eq.piece1) then
                     piece3 = state%squares(i,j+2)
@@ -216,7 +218,7 @@ module boardclass
         do i = one, imax - two
         do j = one, jmax - two
             piece1 = state%squares(i,j)
-            if(piece1.ne.empty) then
+            if(piece1.eq.p) then
                 piece2 = state%squares(i+1,j+1)
                 if(piece2.eq.piece1) then
                     piece3 = state%squares(i+2,j+2)
@@ -233,7 +235,7 @@ module boardclass
         do i = one, imax - two
         do j = jmax, 3, -1
             piece1 = state%squares(i,j)
-            if(piece1.ne.empty) then
+            if(piece1.eq.p) then
                 piece2 = state%squares(i+1,j-1)
                 if(piece2.eq.piece1) then
                     piece3 = state%squares(i+2,j-2)
@@ -259,7 +261,6 @@ module boardclass
 !       child%turn    = -node%turn
         child = node
         child%depth = child%depth + 1
-        child%turn  = -child%turn
         call movepiece(child, move)
     end subroutine
 
