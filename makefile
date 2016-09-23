@@ -9,7 +9,7 @@ compile:
 	gfortran $(PRC) $(OBJ) -c -O3
 	gfortran main.f90 $(OFF) tcp.o -o $(OUT)
 dbg:
-	gcc -c tcp.c
+	gcc -c -g tcp.c
 	gfortran $(PRC) $(DBG) $(OBJ) -c
 	gfortran main.f90 $(DBG) $(OFF) tcp.o -o $(OUT)
 pro:

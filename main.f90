@@ -12,20 +12,20 @@ program main
     type(act) :: move
     integer :: iarg
     CHARACTER(len=32) :: arg
-    CHARACTER(len=3)  :: io_move
     integer :: gameid, tmpint, socket, ipos, idir
-    integer(pi) :: player, htype
-    integer(pi4):: v, alpha, beta, rounds, mdepth
+    integer(pi) :: htype
+    integer(pi4):: v, alpha, beta, nmoves, rounds, mdepth
     real        :: start, finish, starttot, finishtot, maxt
 
-    big = huge(v)
+    ! Default values
     imax = 5
     jmax = 4
     iam = p1
     heis = p2
     htype = 0
-    mdepth = 10
     gameid = 11
+    big = huge(v)
+    mdepth = 12
 
     do iarg = 1, iargc()
         call getarg(iarg, arg)
@@ -52,41 +52,29 @@ program main
     call printboard(game)
 
     rounds = 0
+    nmoves = 0
     call cpu_time(starttot)
     maxt = 0
     if(iam.eq.p2) then
-        player = heis
-        rounds = rounds + 1
-        write(*,*) 'Player', player
+        call printroundplayer(rounds, nmoves, heis)
         call receive3(socket, ipos, idir)
-        move%i = ipos / 10 
-        move%j = mod(ipos,10)
-        select case(idir)
-            case(1)
-                move%d = 'N' 
-            case(2)
-                move%d = 'E' 
-            case(3)
-                move%d = 'S'
-            case(4)
-                move%d = 'W' 
-        end select
+        call iposidirtomove(ipos, idir, move, .true.)
         call movepiece(game, move)
         call printboard(game)
         call checkwinner(game)
     end if
     do while(game%winner.eq.empty)
-        rounds = rounds + 1
 
-        write(*,*) 'ROUND:', rounds
-        write(*,*) 'Player', iam
+        call printroundplayer(rounds, nmoves, iam)
+
         call cpu_time(start)
         nnode = 0
         call alphabeta(v, game, -huge(alpha), huge(beta), iam, 0, mdepth, move, htype)
         call cpu_time(finish)
-        print '("Time = ",f6.3," seconds.")',finish-start
-        write(*,'(A,2I1,A1," Value: ",I0," Nodes evaluated: ", I0," Time: ", f6.3, " seconds")') &
-            'Best Move: ', move%i, move%j, move%d, v, nnode, finish - start
+        write(*,'(A, 2I1, A1, /, A, I0, /, A, I0, A, F6.3, A, /)') &
+            'Best Move: ', move%i, move%j, move%d, &
+            'Heuristic Value: ', v, &
+            'Nodes evaluated: ', nnode, '  Time required: ', finish - start, ' seconds'
         if(finish-start.ge.maxt) maxt = finish-start
 
         call iposidirtomove(ipos, idir, move, .false.)
@@ -96,7 +84,7 @@ program main
         call checkwinner(game)
         if(game%winner.ne.empty) exit
 
-        write(*,*) 'Player', heis
+        call printroundplayer(rounds, nmoves, heis)
         call receive3(socket, ipos, idir)
         call iposidirtomove(ipos, idir, move, .true.)
         call movepiece(game, move)
@@ -104,7 +92,7 @@ program main
         call checkwinner(game)
         if(game%winner.ne.empty) exit
 
-        if(rounds.eq.100) exit
+        if(rounds.eq.1000) exit
     end do
     call cpu_time(finishtot)
     print '("Total time = ",f16.3," seconds.")',finishtot-starttot
@@ -113,20 +101,18 @@ program main
 
     deallocate(game%squares)
 
-    write(*,*) game%winner
-
     open(unit=40,file='winnings.dat',Access = 'append',Status='old')
     if(game%winner.eq.iam) then
-        write(40,'(A,I4,A)') 'I won in ', rounds,' moves. :)'
-        write(*,'(A,I4,A)') 'I won in ', rounds,' moves. :)'
+        write(40,'(A,I4,A)') 'I won in ', rounds,' rounds. :)'
+        write(*,'(A,I4,A)') 'I won in ', rounds,' rounds. :)'
     endif
     if(game%winner.eq.heis) then
-        write(40,'(A,I4,A)') 'I lost in ', rounds,' moves. :('
-        write(*,'(A,I4,A)') 'I lost in ', rounds,' moves. :('
+        write(40,'(A,I4,A)') 'I lost in ', rounds,' rounds. :('
+        write(*,'(A,I4,A)') 'I lost in ', rounds,' rounds. :('
     endif
     if(game%winner.eq.empty) then
-        write(40,'(A,I4,A)') 'It s a tie after ', rounds,' moves. :\'
-        write(*,'(A,I4,A)') 'It s a tie after ', rounds,' moves. :\'
+        write(40,'(A,I4,A)') 'It s a tie after ', rounds,' rounds. :\'
+        write(*,'(A,I4,A)') 'It s a tie after ', rounds,' rounds. :\'
     endif
     close(40)
 
@@ -167,4 +153,23 @@ subroutine iposidirtomove(ipos, idir, move, rcv)
     end if
 
     return
+end subroutine
+
+subroutine printroundplayer(rounds, nmoves, player)
+    use prec
+    use globals
+    implicit none
+
+    integer :: rounds, nmoves
+    integer(pi) :: player
+
+    rounds = 1 + nmoves / 2
+    nmoves = nmoves + 1
+    write(*,'(/,A,/)') '*************************'
+    if(player.eq.p1) then
+        write(*,'(A,I0,A)') 'Round: ', rounds, ' Player: White (+)'
+    else
+        write(*,'(A,I0,A)') 'Round: ', rounds, ' Player: Black (-)'
+    end if
+
 end subroutine

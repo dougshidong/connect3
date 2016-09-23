@@ -92,17 +92,17 @@ void receive3(int s, int *pos, int *dir)
 {
     int nread;
     char buf[BUF_SIZE];
-    char *cdir;
+    char cdir;
     memset(&buf[0], 0, sizeof(buf));
     if ((nread = read(s, buf, BUF_SIZE)) < 0) {
       fprintf(stderr, "Error reading move");
       exit (1);
     }
-    fprintf(stderr, "Received move from server: %s\n", buf);
+    fprintf(stderr, "Received move from server: %s", buf);
     char *newline = strchr(buf,'\n');
     if(newline) *newline = 0;
-    sscanf(buf, "%d%c", pos, cdir);
-    switch(*cdir)
+    sscanf(buf, "%d%c", pos, &cdir);
+    switch(cdir)
     {
         case 'N': *dir = 1; break;
         case 'E': *dir = 2; break;

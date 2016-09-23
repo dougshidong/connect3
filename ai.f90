@@ -125,7 +125,7 @@ module ai
                 alpha = max(alpha, v)
                 
                 if(depth.eq.0 .and. printt.eq.1) then
-                    write(*,'(I2," out of ", I2, ", Move: " 2I1,A1,", value:",I0)') & 
+                    write(*,'(I2," out of ", I2, ", Move: ", 2I1,A1,", value:",I0)') & 
                     ichild, nchildren, acts(ichild)%i, acts(ichild)%j, acts(ichild)%d, v
                 end if
 
@@ -220,7 +220,7 @@ module ai
                 beta = min(beta, v)
 
                 if(depth.eq.0 .and. printt.eq.1) then
-                    write(*,'(I2," out of ", I2, ", Move: " 2I1,A1,", value:",I0)') & 
+                    write(*,'(I2," out of ", I2, ", Move: ", 2I1,A1,", value:",I0)') & 
                     ichild, nchildren, acts(ichild)%i, acts(ichild)%j, acts(ichild)%d, v
                 end if
 
