@@ -87,7 +87,6 @@ void send3(int s, int pos, int dir)
         fprintf(stderr, "Error reading reply");
         exit (1);
     }
-    fprintf(stderr, "Server reply2: %s\n", buf);
 }
 void receive3(int s, int *pos, int *dir)
 {
@@ -109,6 +108,6 @@ void receive3(int s, int *pos, int *dir)
         case 'E': *dir = 2; break;
         case 'S': *dir = 3; break;
         case 'W': *dir = 4; break;
-        default : fprintf(stderr, "Invalid receive direction\n"); break;
+        default : fprintf(stderr, "Invalid receive direction\n"); exit(1); break;
     }
 }
