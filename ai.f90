@@ -20,6 +20,7 @@ module ai
         integer(pi4) :: v, vab, depth, alpha, beta, maxdepth, vtemp
         integer(pi)  :: player, ichild, jchild, nchildren
         type(act)    :: acts(16), bestmove, tempmove
+        real         :: mixit
 
         alpha = ialpha
         beta = ibeta
@@ -45,9 +46,21 @@ module ai
         if(player.eq.p1) then
             v = -big
             call generateActions(node, p1, nchildren, acts)
-
-            ! Run alpha-beta on all children up to a depth of maxdepth - 1
+            ! Run alpha-beta on all children up to a depth of (maxdepth - sortd)
+            ! Then sort moves such that maxmimum moves occur first
             if(depth.eq.0 .and. sortd.ne.0) then
+
+                ! Randomize actions such that moves with equal values are randomly
+                ! ordered
+                do ichild = nchildren, 2, -1
+                    call random_number(mixit)
+                    jchild = 1 + floor(ichild*mixit) 
+                    tempmove = acts(jchild)
+                    acts(jchild) = acts(ichild)
+                    acts(ichild) = tempmove
+                end do
+
+
                 allocate(rootchildren(nchildren))
                 allocate(values(nchildren))
                 do ichild = 1, nchildren
@@ -111,7 +124,6 @@ module ai
                 if(depth.eq.0) then
                     write(*,'(I2,"  ",2I1,A1," v:",I0 )') & 
                     ichild, acts(ichild)%i, acts(ichild)%j, acts(ichild)%d, v
-                    write(*,*) 'ichild, alpha', ichild, alpha
                 end if
 
                 if(beta.le.alpha) exit
@@ -130,8 +142,22 @@ module ai
         else
             v = big
             call generateActions(node, p2, nchildren, acts)
-            ! Run alpha-beta on all children up to a depth of maxdepth - 1
+
+            ! Run alpha-beta on all children up to a depth of (maxdepth - sortd)
+            ! Then sort moves such that minimum moves occur first
             if(depth.eq.0 .and. sortd.ne.0) then
+
+                ! Randomize actions such that moves with equal values are randomly
+                ! ordered
+                do ichild = nchildren, 2, -1
+                    call random_number(mixit)
+                    jchild = 1 + floor(ichild*mixit) 
+                    write(*,*) 'ijchild',ichild, jchild
+                    tempmove = acts(jchild)
+                    acts(jchild) = acts(ichild)
+                    acts(ichild) = tempmove
+                end do
+
                 allocate(rootchildren(nchildren))
                 allocate(values(nchildren))
                 do ichild = 1, nchildren
@@ -194,7 +220,6 @@ module ai
                 if(depth.eq.0) then
                     write(*,'(I2,"  ",2I1,A1," v:",I0)') & 
                     ichild, acts(ichild)%i, acts(ichild)%j, acts(ichild)%d, v
-                    write(*,*) 'ichild, beta', ichild, beta
                 end if
 
                 if(beta.le.alpha) exit
@@ -238,7 +263,7 @@ module ai
         type (board) :: state
         integer(pi4) :: h
         integer(pi)  :: i, j
-        integer(pi)  :: xi, yi, xj, yj
+        integer(pi)  :: xi, yi, xj, yj, dx, dy
 
         h = 0
 
@@ -250,9 +275,15 @@ module ai
             xj = state%pieces(1,j,1)
             yj = state%pieces(2,j,1)
 
-            if(abs(xi - xj).eq.1 .and. abs(yi - yj).eq.1) then
+            dx = abs(xi - xj)
+            dy = abs(yi - yj)
+
+            if(dx.eq.1 .and. dy.eq.1) then
                 h = h + 100
+                if(xi.eq.xj .or. yi.eq.yj) h = h + 3 ! Prefer diagonals
             end if
+            h = h - abs(xi-(imax+1)/2)
+            h = h - abs(yi-(jmax+1)/2)
 
             xi = state%pieces(1,i,2)
             yi = state%pieces(2,i,2)
@@ -260,14 +291,16 @@ module ai
             xj = state%pieces(1,j,2)
             yj = state%pieces(2,j,2)
 
-            if(abs(xi - xj).eq.1 .and. abs(yi - yj).eq.1) then
-                h = h - 100
-            end if
-        end do
-        end do
+            dx = abs(xi - xj)
+            dy = abs(yi - yj)
 
-        if(state%turn.eq.p1) h = h - state%depth
-        if(state%turn.eq.p2) h = h + state%depth
+            if(dx.eq.1 .and. dy.eq.1) then
+                h = h - 100
+                if(xi.eq.xj .or. yi.eq.yj) h = h + 3 ! Prefer diagonals
+            end if
+            h = h + abs(xi-(imax+1)/2)
+        end do
+        end do
 
         return
 

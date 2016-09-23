@@ -24,14 +24,14 @@ program main
     iam = p1
     heis = p2
     htype = 0
-    mdepth = 11
+    mdepth = 10
 
     do iarg = 1, iargc()
         call getarg(iarg, arg)
         if(arg == '-7x6') then
             imax = 7
             jmax = 6
-            mdepth = 10
+            mdepth = mdepth - 1
         else if(arg == '-white') then
             iam = p1
             heis = p2
@@ -51,14 +51,6 @@ program main
     call printboard(game)
 
     rounds = 0
-!   player = heis
-!   if(iam.eq.p2) then
-!       read(*,'(2I1,A1)') move%i,move%j,move%d
-!       call movepiece(game, move)
-!       call printboard(game)
-!       rounds = rounds + 1
-!   end if
-
     call cpu_time(starttot)
     maxt = 0
     if(iam.eq.p2) then
