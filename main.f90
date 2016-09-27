@@ -91,7 +91,7 @@ program main
         call iposidirtomove(ipos, idir, move, .true.)
         call movepiece(game, move)
         call printboard(game)
-        call checkwinner2(game)
+        call checkwinner(game)
         if(game%winner.ne.empty) exit
 
         if(rounds.eq.1000) exit
