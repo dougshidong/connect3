@@ -25,7 +25,7 @@ program main
     htype = 0
     gameid = 11
     big = huge(v)
-    mdepth = 10
+    mdepth = 11
     sortd = 0
 
     do iarg = 1, iargc()
@@ -34,7 +34,7 @@ program main
             imax = 7
             jmax = 6
             mdepth = 10
-            sortd = 0
+            sortd = 2
         else if(arg == '-white') then
             iam = p1
             heis = p2
