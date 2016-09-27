@@ -15,7 +15,7 @@ module boardclass
         ! a = coordinate : i and j positions
         ! b = ipiece = 1:4
         ! c = player 1 and 2
-        integer(pi) :: pieces(2,4,2) 
+        integer(pi) :: pieces(2,4,2)
     end type board
 
     type :: act
@@ -114,7 +114,7 @@ module boardclass
         else
             ip = 2
         end if
-        
+
         state%turn = -state%turn
         state%squares(x,y) = empty
         select case(move%d)
@@ -176,80 +176,109 @@ module boardclass
     subroutine checkwinner(state)
         implicit none
         type(board) :: state
-        integer(pi) :: i, j, piece1, piece2, piece3, p
+        integer(pi) :: i, j, p, pp
+        integer(pi4) :: xi, yi, xj, yj, xk, yk, dx, dy
 
         state%winner = empty
         p = -state%turn
-!       Check horizontal
-        do i = one, imax - two
-        do j = one, jmax
-            piece1 = state%squares(i,j)
-            if(piece1.eq.p) then
-                piece2 = state%squares(i+1,j)
-                if(piece2.eq.piece1) then
-                    piece3 = state%squares(i+2,j)
-                    if(piece3.eq.piece1) then
-                        state%winner = piece1
-                        return
+        if(p.eq.p1) pp = 1
+        if(p.eq.p2) pp = 2
+
+        do i = 1, 3
+            xi = state%pieces(1,i,pp)
+            yi = state%pieces(2,i,pp)
+            do j = i+one, 4
+
+                xj = state%pieces(1,j,pp)
+                yj = state%pieces(2,j,pp)
+
+                dx = xi - xj
+                dy = yi - yj
+
+                if(abs(dx).le.1 .and. abs(dy).le.1) then
+                    ! Vertical
+                    if(dx.eq.0) then
+                        yk = max(yi, yj) + 1
+                        if(yk.le.jmax) then
+                            if(state%squares(xi, yk).eq.p) then
+                                state%winner = p
+                                return
+                            end if
+                        end if
+                        yk = min(yi, yj) - 1
+                        if(yk.ge.1) then
+                            if(state%squares(xi, yk).eq.p) then
+                                state%winner = p
+                                return
+                            end if
+                        end if
                     end if
+
+                    ! Horizontal
+                    if(dy.eq.0) then
+                        xk = max(xi, xj) + 1
+                        if(xk.le.imax) then
+                            if(state%squares(xk, yi).eq.p) then
+                                state%winner = p
+                                return
+                            end if
+                        end if
+                        xk = min(xi, xj) - 1
+                        if(xk.ge.1) then
+                            if(state%squares(xk, yi).eq.p) then
+                                state%winner = p
+                                return
+                            end if
+                        end if
+                    end if
+
+                    ! Diagonal
+                    if(dx*dy.eq.1) then
+                        xk = max(xi, xj) + 1
+                        yk = max(yi, yj) + 1
+                        if(xk.le.imax .and. yk.le.jmax) then
+                            if(state%squares(xk, yk).eq.p) then
+                                state%winner = p
+                                return
+                            end if
+                        end if
+                        xk = min(xi, xj) - 1
+                        yk = min(yi, yj) - 1
+                        if(xk.ge.1 .and. yk.ge.1) then
+                            if(state%squares(xk, yk).eq.p) then
+                                state%winner = p
+                                return
+                            end if
+                        end if
+                    end if
+
+                    ! Diagonal
+                    if(dx*dy.eq.-1) then
+                        xk = min(xi, xj) - 1
+                        yk = max(yi, yj) + 1
+                        if(xk.ge.1 .and. yk.le.jmax) then
+                            if(state%squares(xk, yk).eq.p) then
+                                state%winner = p
+                                return
+                            end if
+                        end if
+                        xk = max(xi, xj) + 1
+                        yk = min(yi, yj) - 1
+                        if(xk.le.imax .and. yk.ge.1) then
+                            if(state%squares(xk, yk).eq.p) then
+                                state%winner = p
+                                return
+                            end if
+                        end if
+                    end if
+
                 end if
-            end if
-        end do
+
+            end do
         end do
 
-!       Check vertical
-        do i = one, imax
-        do j = one, jmax - two
-            piece1 = state%squares(i,j)
-            if(piece1.eq.p) then
-                piece2 = state%squares(i,j+1)
-                if(piece2.eq.piece1) then
-                    piece3 = state%squares(i,j+2)
-                    if(piece3.eq.piece1) then
-                        state%winner = piece1
-                        return
-                    end if
-                end if
-            end if
-        end do
-        end do
-
-!       Check diagonal
-        do i = one, imax - two
-        do j = one, jmax - two
-            piece1 = state%squares(i,j)
-            if(piece1.eq.p) then
-                piece2 = state%squares(i+1,j+1)
-                if(piece2.eq.piece1) then
-                    piece3 = state%squares(i+2,j+2)
-                    if(piece3.eq.piece1) then
-                        state%winner = piece1
-                        return
-                    end if
-                end if
-            end if
-        end do
-        end do
-
-!       Check other diagonal
-        do i = one, imax - two
-        do j = jmax, 3, -1
-            piece1 = state%squares(i,j)
-            if(piece1.eq.p) then
-                piece2 = state%squares(i+1,j-1)
-                if(piece2.eq.piece1) then
-                    piece3 = state%squares(i+2,j-2)
-                    if(piece3.eq.piece1) then
-                        state%winner = piece1
-                        return
-                    end if
-                end if
-            end if
-        end do
-        end do
-
-        return
     end subroutine
+
 
     subroutine makechild(node, child, move)
         type(board) :: node, child
