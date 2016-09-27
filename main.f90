@@ -25,14 +25,16 @@ program main
     htype = 0
     gameid = 11
     big = huge(v)
-    mdepth = 12
+    mdepth = 10
+    sortd = 0
 
     do iarg = 1, iargc()
         call getarg(iarg, arg)
         if(arg == '-7x6') then
             imax = 7
             jmax = 6
-            mdepth = mdepth - 1
+            mdepth = 10
+            sortd = 0
         else if(arg == '-white') then
             iam = p1
             heis = p2
@@ -89,7 +91,7 @@ program main
         call iposidirtomove(ipos, idir, move, .true.)
         call movepiece(game, move)
         call printboard(game)
-        call checkwinner(game)
+        call checkwinner2(game)
         if(game%winner.ne.empty) exit
 
         if(rounds.eq.1000) exit
