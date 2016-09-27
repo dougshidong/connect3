@@ -2,7 +2,7 @@ module ai
 
     use prec
     use globals
-    use boardclass 
+    use boardclass
     implicit none
 
     contains
@@ -36,33 +36,42 @@ module ai
 !           Substracting node depth encourages the fewest winning moves
 !           Without depth, it may 'taunt' the enemy with an uppper hand forever
             v = evalHeuristic(node, htype)
-            v = v + node%winner * ((big-10000) - node%depth)
+            v = v + node%winner * (big-500000)
+            if(node%winner.eq.iam) then
+                v = v - iam * (node%depth * 10000)
+            else
+                v = v + iam * (node%depth * 10000)
+            end if
             return
         end if
-        
+
         if(depth.eq.maxdepth) then
             v = evalHeuristic(node, htype)
             return
         end if
 
+        if(depth.eq.0) then
+          call init_random_seed()
+        end if
 !       Maximizing player
         if(player.eq.p1) then
             v = -big
             call generateActions(node, p1, nchildren, acts)
-            ! Run alpha-beta on all children up to a depth of (maxdepth - sortd)
-            ! Then sort moves such that maxmimum moves occur first
-            if(depth.eq.0 .and. sortd.ne.0) then
 
-                ! Randomize actions such that moves with equal values are randomly
-                ! ordered
+            ! Randomize actions such that moves with equal values are randomly ordered
+            if(depth.eq.0) then
                 do ichild = nchildren, 2, -1
                     call random_number(mixit)
-                    jchild = 1 + floor(ichild*mixit) 
+                    jchild = 1 + floor(ichild*mixit)
                     tempmove = acts(jchild)
                     acts(jchild) = acts(ichild)
                     acts(ichild) = tempmove
                 end do
+            end if
 
+            ! Run alpha-beta on all children up to a depth of (maxdepth - sortd)
+            ! Then sort moves such that maxmimum moves occur first
+            if(depth.eq.0 .and. sortd.ne.0) then
 
                 allocate(rootchildren(nchildren))
                 allocate(values(nchildren))
@@ -115,7 +124,7 @@ module ai
                         alpha, beta, p2, depth + 1, maxdepth, bestmove, htype)
 
                 if(depth.eq.0) then
-                    if(vab.gt.v) then 
+                    if(vab.gt.v) then
                         bestmove = acts(ichild)
                     endif
                 end if
@@ -123,10 +132,10 @@ module ai
                 v = max(v, vab)
 
                 alpha = max(alpha, v)
-                
+
                 if(depth.eq.0 .and. printt.eq.1) then
-                    write(*,'(I2," out of ", I2, ", Move: ", 2I1,A1,", value:",I0)') & 
-                    ichild, nchildren, acts(ichild)%i, acts(ichild)%j, acts(ichild)%d, v
+                    write(*,'(I2," out of ", I2, ", Move: ", 2I1,A1,", value:",I0," Best Move: ", 2I1,A1)') &
+                    ichild, nchildren, acts(ichild)%i, acts(ichild)%j, acts(ichild)%d, v, bestmove%i, bestmove%j, bestmove%d
                 end if
 
                 if(beta.le.alpha) exit
@@ -146,19 +155,20 @@ module ai
             v = big
             call generateActions(node, p2, nchildren, acts)
 
-            ! Run alpha-beta on all children up to a depth of (maxdepth - sortd)
-            ! Then sort moves such that minimum moves occur first
-            if(depth.eq.0 .and. sortd.ne.0) then
-
-                ! Randomize actions such that moves with equal values are randomly
-                ! ordered
+            ! Randomize actions such that moves with equal values are randomly ordered
+            if(depth.eq.0) then
                 do ichild = nchildren, 2, -1
                     call random_number(mixit)
-                    jchild = 1 + floor(ichild*mixit) 
+                    jchild = 1 + floor(ichild*mixit)
                     tempmove = acts(jchild)
                     acts(jchild) = acts(ichild)
                     acts(ichild) = tempmove
                 end do
+            end if
+
+            ! Run alpha-beta on all children up to a depth of (maxdepth - sortd)
+            ! Then sort moves such that minimum moves occur first
+            if(depth.eq.0 .and. sortd.ne.0) then
 
                 allocate(rootchildren(nchildren))
                 allocate(values(nchildren))
@@ -210,7 +220,7 @@ module ai
                 call alphabeta(vab, node%children(ichild), &
                         alpha, beta, p1, depth + 1, maxdepth, bestmove, htype)
                 if(depth.eq.0) then
-                    if(vab.lt.v) then 
+                    if(vab.lt.v) then
                         bestmove = acts(ichild)
                     endif
                 end if
@@ -220,8 +230,8 @@ module ai
                 beta = min(beta, v)
 
                 if(depth.eq.0 .and. printt.eq.1) then
-                    write(*,'(I2," out of ", I2, ", Move: ", 2I1,A1,", value:",I0)') & 
-                    ichild, nchildren, acts(ichild)%i, acts(ichild)%j, acts(ichild)%d, v
+                    write(*,'(I2," out of ", I2, ", Move: ", 2I1,A1,", value:",I0," Best Move: ", 2I1,A1)') &
+                    ichild, nchildren, acts(ichild)%i, acts(ichild)%j, acts(ichild)%d, v, bestmove%i, bestmove%j, bestmove%d
                 end if
 
                 if(beta.le.alpha) exit
@@ -242,6 +252,22 @@ module ai
         return
 
     end subroutine
+
+    SUBROUTINE init_random_seed()
+      INTEGER :: i, n, clock
+      INTEGER, DIMENSION(:), ALLOCATABLE :: seed
+
+      n = 1
+      CALL RANDOM_SEED(size = n)
+      ALLOCATE(seed(n))
+
+      CALL SYSTEM_CLOCK(COUNT=clock)
+
+      seed = clock + 37 * (/ (i - 1, i = 1, n) /)
+      CALL RANDOM_SEED(PUT = seed)
+
+      DEALLOCATE(seed)
+    END SUBROUTINE
 
     function evalHeuristic(state, htype) result(h)
         implicit none
@@ -265,49 +291,182 @@ module ai
         type (board) :: state
         integer(pi4) :: h
         integer(pi)  :: i, j
-        integer(pi)  :: xi, yi, xj, yj, dx, dy
+        integer(pi)  :: xi, yi, xj, yj, dx, dy, xk, yk
 
         h = 0
+        h = hdist(state)
 
         do i = 1, 3
 
             xi = state%pieces(1,i,1)
             yi = state%pieces(2,i,1)
             do j = i+one, 4
-
+!               Player 1 White
                 xj = state%pieces(1,j,1)
                 yj = state%pieces(2,j,1)
 
-                dx = abs(xi - xj)
-                dy = abs(yi - yj)
+                dx = xi - xj
+                dy = yi - yj
 
-                if(dx.eq.1 .and. dy.eq.1) then
-                    h = h + 100
-    !                if(xi.eq.xj .or. yi.eq.yj) h = h + 3 ! Prefer diagonals
+                if(abs(dx).le.1 .and. abs(dy).le.1) then
+                    h = h + 5
+
+!                   if(dx.eq.0) then
+!                       yk = max(yi, yj) + 1
+!                       if(yk.le.jmax) then
+!                           if(state%squares(xi, yk).eq.empty) then
+!                               h = h + 1
+!                           end if
+!                       end if
+!                       yk = min(yi, yj) - 1
+!                       if(yk.ge.1) then
+!                           if(state%squares(xi, yk).eq.empty) then
+!                               h = h + 1
+!                           end if
+!                       end if
+!                   end if
+
+!                   if(dy.eq.0) then
+!                       xk = max(xi, xj) + 1
+!                       if(xk.le.imax) then
+!                           if(state%squares(xk, yi).eq.empty) then
+!                               h = h + 1
+!                           end if
+!                       end if
+!                       xk = min(xi, xj) - 1
+!                       if(xk.ge.1) then
+!                           if(state%squares(xk, yi).eq.empty) then
+!                               h = h + 1
+!                           end if
+!                       end if
+!                   end if
+
+!                   if(dx*dy.eq.1) then
+!                       xk = max(xi, xj) + 1
+!                       yk = max(yi, yj) + 1
+!                       if(xk.le.imax .and. yk.le.jmax) then
+!                           if(state%squares(xk, yk).eq.empty) then
+!                               h = h + 1
+!                           end if
+!                       end if
+!                       xk = min(xi, xj) - 1
+!                       yk = min(yi, yj) - 1
+!                       if(xk.ge.1 .and. yk.ge.1) then
+!                           if(state%squares(xk, yk).eq.empty) then
+!                               h = h + 1
+!                           end if
+!                       end if
+!                   end if
+
+!                   if(dx*dy.eq.-1) then
+!                       xk = min(xi, xj) - 1
+!                       yk = max(yi, yj) + 1
+!                       if(xk.ge.1 .and. yk.le.jmax) then
+!                           if(state%squares(xk, yk).eq.empty) then
+!                               h = h + 1
+!                           end if
+!                       end if
+!                       xk = max(xi, xj) + 1
+!                       yk = min(yi, yj) - 1
+!                       if(xk.le.imax .and. yk.ge.1) then
+!                           if(state%squares(xk, yk).eq.empty) then
+!                               h = h + 1
+!                           end if
+!                       end if
+!                   end if
+
                 end if
-            end do
+                ! End of P1 White H
 
-            h = h - abs(xi-(imax+1)/2) ! Ideally, pieces go towards the center
-!            h = h - abs(yi-(jmax+1)/2) ! Ideally, pieces go towards the center
-
-            xi = state%pieces(1,i,2)
-            yi = state%pieces(2,i,2)
-            do j = i+one, 4
+!               Player 2 Black
                 xj = state%pieces(1,j,2)
                 yj = state%pieces(2,j,2)
 
-                dx = abs(xi - xj)
-                dy = abs(yi - yj)
+                dx = xi - xj
+                dy = yi - yj
 
-                if(dx.eq.1 .and. dy.eq.1) then
-                    h = h - 100
-    !                if(xi.eq.xj .or. yi.eq.yj) h = h + 3 ! Prefer diagonals
+                if(abs(dx).le.1 .and. abs(dy).le.1) then
+                    h = h - 5
+
+!                   if(dx.eq.0) then
+!                       yk = max(yi, yj) + 1
+!                       if(yk.le.jmax) then
+!                           if(state%squares(xi, yk).eq.empty) then
+!                               h = h - 1
+!                           end if
+!                       end if
+!                       yk = min(yi, yj) - 1
+!                       if(yk.ge.1) then
+!                           if(state%squares(xi, yk).eq.empty) then
+!                               h = h - 1
+!                           end if
+!                       end if
+!                   end if
+
+!                   if(dy.eq.0) then
+!                       xk = max(xi, xj) + 1
+!                       if(xk.le.imax) then
+!                           if(state%squares(xk, yi).eq.empty) then
+!                               h = h - 1
+!                           end if
+!                       end if
+!                       xk = min(xi, xj) - 1
+!                       if(xk.ge.1) then
+!                           if(state%squares(xk, yi).eq.empty) then
+!                               h = h - 1
+!                           end if
+!                       end if
+!                   end if
+
+!                   if(dx*dy.eq.1) then
+!                       xk = max(xi, xj) + 1
+!                       yk = max(yi, yj) + 1
+!                       if(xk.le.imax .and. yk.le.jmax) then
+!                           if(state%squares(xk, yk).eq.empty) then
+!                               h = h - 1
+!                           end if
+!                       end if
+!                       xk = min(xi, xj) - 1
+!                       yk = min(yi, yj) - 1
+!                       if(xk.ge.1 .and. yk.ge.1) then
+!                           if(state%squares(xk, yk).eq.empty) then
+!                               h = h - 1
+!                           end if
+!                       end if
+!                   end if
+
+!                   if(dx*dy.eq.-1) then
+!                       xk = min(xi, xj) - 1
+!                       yk = max(yi, yj) + 1
+!                       if(xk.ge.1 .and. yk.le.jmax) then
+!                           if(state%squares(xk, yk).eq.empty) then
+!                               h = h - 1
+!                           end if
+!                       end if
+!                       xk = max(xi, xj) + 1
+!                       yk = min(yi, yj) - 1
+!                       if(xk.le.imax .and. yk.ge.1) then
+!                           if(state%squares(xk, yk).eq.empty) then
+!                               h = h - 1
+!                           end if
+!                       end if
+!                   end if
+
                 end if
+                ! End of P2 Black H
+
             end do
+        end do
 
-            h = h + abs(xi-(imax+1)/2) ! Ideally, pieces go towards the center
-!            h = h + abs(yi-(jmax+1)/2) ! Ideally, pieces go towards the center
-
+        do i = 1,  4
+            xi = state%pieces(1,i,1)
+            h = h - abs(xi-(imax+1)/2) ! Ideally, pieces go towards the center
+            yi = state%pieces(2,i,1)
+            h = h - floor(abs(yi-(jmax+1)/2.0)) ! Ideally, pieces go towards the center
+            xi = state%pieces(1,i,2)
+            h = h + abs(xi-(imax+1)) ! Ideally, pieces go towards the center
+            yi = state%pieces(2,i,2)
+            h = h + floor(abs(yi-(jmax+1)/2.0)) ! Ideally, pieces go towards the center
         end do
 
         return
@@ -334,7 +493,7 @@ module ai
             yj = state%pieces(2,j,1)
 
             d1 = (xi - xj)**2 + (yi - yj)**2
-            h = h - 20*d1
+            h = h - d1
 
             xi = state%pieces(1,i,2)
             yi = state%pieces(2,i,2)
@@ -344,7 +503,7 @@ module ai
 
             d2 = (xi - xj)**2 + (yi - yj)**2
 
-            h = h + 20*d2
+            h = h + d2
         end do
         end do
 
@@ -405,9 +564,9 @@ module ai
                 moves(nmove) % d = 'N'
             end if
         end if
-        
+
     end do
-        
+
     end subroutine
 
 
