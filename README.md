@@ -9,7 +9,7 @@ The game of "dynamic connect-4" is played on a 7x7 grid as follows: Starting fro
 
 Implement a game-playing agent to play the game of dynamic connect-4. Your agent must be capable of playing either white or black. The time limit for your agent to output its move is 20 seconds. It is strongly suggested that you display the game state using the text representation of a matrix of comma-separated characters, with O denoting a white piece, X denoting a black piece, and suitably formatted whitespace denoting an empty square. For example, the starting board configuration above would be represented as follows:
 
-        1 2 3 4 5 6 7
+      1 2 3 4 5 6 7
     1  , , , , , ,X
     2 X, , , , , ,O
     3 O, , , , , ,X
