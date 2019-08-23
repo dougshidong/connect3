@@ -1,11 +1,11 @@
 # Connect3
 
-##Introduction
+## Introduction
 
 The game of "dynamic connect-4" is played on a 7x7 grid as follows: Starting from the initial position illustrated below, players take turns moving one piece of their colour by one square, either horizontally or vertically. White plays first. Pieces can only move to unoccupied squares. The winner is the first player to line up four of its pieces either horizontally, vertically, or diagonally. 
 
 
-##Game Agent
+## Game Agent
 
 Implement a game-playing agent to play the game of dynamic connect-4. Your agent must be capable of playing either white or black. The time limit for your agent to output its move is 20 seconds. It is strongly suggested that you display the game state using the text representation of a matrix of comma-separated characters, with O denoting a white piece, X denoting a black piece, and suitably formatted whitespace denoting an empty square. For example, the starting board configuration above would be represented as follows:
 
