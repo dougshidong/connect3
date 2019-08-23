@@ -1,5 +1,7 @@
 # Connect3
 
+Winning program of the in-class tournament for Artificial Intelligence - ECSE 526 at McGill University.
+
 ## Introduction
 
 The game of "dynamic connect-4" is played on a 7x7 grid as follows: Starting from the initial position illustrated below, players take turns moving one piece of their colour by one square, either horizontally or vertically. White plays first. Pieces can only move to unoccupied squares. The winner is the first player to line up four of its pieces either horizontally, vertically, or diagonally. 
