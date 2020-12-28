@@ -1,6 +1,6 @@
 # Connect3
 
-Winning program of the in-class tournament for Artificial Intelligence - ECSE 526 at McGill University.
+1st place winning program of the in-class tournament for Artificial Intelligence - ECSE 526 at McGill University.
 
 ## Introduction
 
